@@ -1,4 +1,4 @@
-from src.utils import clean_url
+from linkcleaner.utils import clean_url
 
 TESTCASES = {
     # Amazon
@@ -9,6 +9,8 @@ TESTCASES = {
 
     # Twitter
     "https://twitter.com/PlanNorge/status/1181537299038953473?ref_src=twsrc%2525255Etfw%2525257Ctwcamp%2525255Etweetembed%2525257Ctwterm%2525255E1181537299038953473&ref_url=https%2525253A%2525252F%2525252Fwww.vg.no%2525252F": "https://twitter.com/PlanNorge/status/1181537299038953473",
+
+    "https://www.example.com/page?utm_content=buffercf3b2&utm_medium=social&utm_source=facebook.com&utm_campaign=buffer": "https://www.example.com/page",
 }
 
 

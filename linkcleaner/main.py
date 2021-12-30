@@ -9,7 +9,7 @@ bot = hikari.GatewayBot(token=os.environ.get('TOKEN'))
 
 
 def construct_reply(cleaned_urls) -> str:
-    list_str = "\n".join('<'+x+'>' for x in cleaned_urls)
+    list_str = "\n".join(f"<{x}>" for x in cleaned_urls)
     return f"I have sanitized the link(s) in your message:\n{list_str}"
 
 

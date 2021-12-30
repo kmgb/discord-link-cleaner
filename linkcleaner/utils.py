@@ -2,9 +2,15 @@ import re
 from typing import List
 from furl import furl
 
-# Regex by @diegoperini
 URL_REGEX = re.compile(r"https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*)")  # noqa: E501
-AMAZON_PRODUCT_REGEX = re.compile(r"")
+
+GENERAL_TRACKER_LIST = []
+# Setup script
+with open("general_param_list.txt") as f:
+    for param in f.readlines():
+        GENERAL_TRACKER_LIST.append(param.rstrip())
+
+print(GENERAL_TRACKER_LIST)
 
 
 def find_urls(text) -> List[str]:
@@ -21,15 +27,20 @@ def clean_url(url):
     if f.username or f.password:
         return None
 
+    # General filters
+    f = remove_params(f, GENERAL_TRACKER_LIST)
+
     match f.netloc:
         case "www.amazon.ca" | "www.amazon.com":
-            return clean_amazon_url(f)
+            f = clean_amazon_url(f)
+
+        case "store.steampowered.com":
+            f = remove_params(f, ["snr"])
 
         case "twitter.com":
-            return remove_params(f, ["ref_src", "ref_url"])
+            f = remove_params(f, ["ref_src", "ref_url"])
 
-        case _:
-            return None
+    return f.url
 
 
 def remove_params(parsed_url, param_list):
@@ -37,7 +48,7 @@ def remove_params(parsed_url, param_list):
         if p in parsed_url.args:
             del parsed_url.args[p]
 
-    return parsed_url.url
+    return parsed_url
 
 
 def clean_amazon_url(parsedurl):
@@ -64,4 +75,4 @@ def clean_amazon_url(parsedurl):
     if node_value:
         parsedurl.args["node"] = node_value
 
-    return parsedurl.url
+    return parsedurl
