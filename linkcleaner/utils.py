@@ -6,9 +6,10 @@ URL_REGEX = re.compile(r"https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-
 
 PARAM_RULE_LIST: list[RemoveParamRule] = []
 # Setup script
-with open("general_url.txt") as f:
+with open("general_url.txt") as f1, open("specific.txt") as f2:
     parser = AbpFilterParser()
-    parser.load(f)
+    parser.load(f1)
+    parser.load(f2)
     PARAM_RULE_LIST = parser.get_filter_list()
 
 
@@ -18,21 +19,21 @@ def find_urls(text) -> list[str]:
 
 def clean_url(url):
     try:
-        f = furl(url)
+        parsed_url = furl(url)
     except ValueError:
         return None
 
     # If it looks like a login URL, don't mess with it
-    if f.username or f.password:
+    if parsed_url.username or parsed_url.password:
         return None
 
     # Remove params from matching urls
     for rule in PARAM_RULE_LIST:
-        if re.match(rule.domain_regex, f.netloc):
+        if re.match(rule.domain_regex, parsed_url.netloc + str(parsed_url.path)):
             for p in rule.params:
-                f.args.pop(p, default=0)
+                parsed_url.args.pop(p, default=0)
 
-    return f.url
+    return parsed_url.url
 
 
 def remove_params(parsed_url, param_list):

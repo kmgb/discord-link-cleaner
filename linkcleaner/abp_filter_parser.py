@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import re
 
 # Ideally this should be as compatible as possible with existing blocking solutions
 # This parser aims to bridge the gap between ABP filters (with removeparam) and this program
@@ -7,8 +8,8 @@ from dataclasses import dataclass
 
 @dataclass
 class RemoveParamRule:
-    domain_regex: str
-    params: list[str]
+    domain_regex: re.Pattern
+    params: list[str | re.Pattern]
 
 
 # Ignores filters that don't include $removeparam
@@ -48,23 +49,46 @@ class AbpFilterParser:
 
         rule = RemoveParamRule(".*", [])
 
+        # TODO: Support ||daraz.*$removeparam=/spm=|scm=|from=|keyori=|sugg=|search=|mp=|c=|^abtest|^abbucket|pos=|themeID=|algArgs=|clickTrackInfo=|acm=|item_id=|version=|up_id=|pvid=/
         for o in options:
-            k, v = o.split("=")
+            kv = o.split("=", 1)
+            if len(kv) != 2:
+                continue
+
+            k, v = kv
+
             if k == "removeparam":
-                rule.params.append(v)
+                rule.params.append(interpret_string_or_regex(v))
+
+            # Ignore site-specific filters, not sure how to consolidate with ||url part
             if k == "domain":
-                return None  # Ignore site-specific filters
+                return None
 
         # Ignore site-specific filters for now
-        if leftside:
-            return None  # TODO: do something about ||, @@|| and domain names
+        if leftside and leftside.startswith("||"):
+            regex = (
+                r"(?:\.|^)" + leftside[2:]
+                .replace("^", r"(?:\?|\/)")
+                .replace(".", r"\.")    # Escape the periods in the URL already
+                .replace("*", ".*")     # Change wildcard syntax to regex
+            )
+
+            rule.domain_regex = re.compile(regex)
 
         return rule
+
+
+def interpret_string_or_regex(text) -> str | re.Pattern:
+    if len(text) > 2 and text[0] == "/" and text[-1] == "/":
+        return re.compile(text[1:-1])
+    else:
+        return text
 
 
 def main():
     parser = AbpFilterParser()
     parser.load(open("general_url.txt"))
+    parser.load(open("specific.txt"))
 
     print(parser.get_filter_list())
 
