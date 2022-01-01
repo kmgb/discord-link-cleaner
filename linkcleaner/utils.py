@@ -29,7 +29,7 @@ def clean_url(url):
 
     # Remove params from matching urls
     for rule in PARAM_RULE_LIST:
-        if re.match(rule.domain_regex, parsed_url.netloc + str(parsed_url.path)):
+        if re.search(rule.domain_regex, parsed_url.netloc + str(parsed_url.path)):
             for p in rule.params:
                 parsed_url.args.pop(p, default=0)
 

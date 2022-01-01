@@ -25,6 +25,7 @@ class AbpFilterParser:
         Parse the filters from the file_obj and add it to the rules list
         """
         for line in file_obj.readlines():
+            print("Line: "+line.strip())
             rule = self.parse_filter_line(line.strip())
             if rule:
                 self.rules.setdefault(rule.domain_regex, set()).update(rule.params)
@@ -65,14 +66,14 @@ class AbpFilterParser:
                 return None
 
         # Ignore site-specific filters for now
-        if leftside and leftside.startswith("||"):
-            regex = (
-                r"(?:\.|^)" + leftside[2:]
-                .replace("^", r"(?:\?|\/)")
-                .replace(".", r"\.")    # Escape the periods in the URL already
-                .replace("*", ".*")     # Change wildcard syntax to regex
-            )
+        if len(leftside) > 2 and leftside.startswith("||"):
+            ls = leftside[2:]
+            ls = ls.replace("^", r"(?:\?|\/)")
+            ls = ls.replace(".", r"\.")    # Escape the periods in the URL already
+            ls = ls.replace("*", ".*")     # Change wildcard syntax to regex
 
+            regex = r"(?:\.|^)" + ls
+            print(f"REGEX: {regex}")
             rule.domain_regex = re.compile(regex)
 
         return rule
