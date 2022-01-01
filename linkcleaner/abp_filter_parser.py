@@ -25,7 +25,6 @@ class AbpFilterParser:
         Parse the filters from the file_obj and add it to the rules list
         """
         for line in file_obj.readlines():
-            print("Line: "+line.strip())
             rule = self.parse_filter_line(line.strip())
             if rule:
                 self.rules.setdefault(rule.domain_regex, set()).update(rule.params)
@@ -51,6 +50,7 @@ class AbpFilterParser:
         rule = RemoveParamRule(".*", [])
 
         # TODO: Support ||daraz.*$removeparam=/spm=|scm=|from=|keyori=|sugg=|search=|mp=|c=|^abtest|^abbucket|pos=|themeID=|algArgs=|clickTrackInfo=|acm=|item_id=|version=|up_id=|pvid=/
+        # TODO: Support ||ups.xplosion.de/ctx?event_id=$removeparam  <-- Not sure what blank removeparam means, does it remove all?
         for o in options:
             kv = o.split("=", 1)
             if len(kv) != 2:
@@ -61,19 +61,17 @@ class AbpFilterParser:
             if k == "removeparam":
                 rule.params.append(interpret_string_or_regex(v))
 
-            # Ignore site-specific filters, not sure how to consolidate with ||url part
-            if k == "domain":
-                return None
-
         # Ignore site-specific filters for now
         if len(leftside) > 2 and leftside.startswith("||"):
             ls = leftside[2:]
+            # TODO: Figure out if re.escape can help, it caused issues before
+            ls = ls.replace("/", r"\/")     # Escape path separators
+            ls = ls.replace("?", r"\?")     # Escape path separators
             ls = ls.replace("^", r"(?:\?|\/)")
-            ls = ls.replace(".", r"\.")    # Escape the periods in the URL already
-            ls = ls.replace("*", ".*")     # Change wildcard syntax to regex
+            ls = ls.replace(".", r"\.")     # Escape the periods in the URL already
+            ls = ls.replace("*", ".*")      # Change wildcard syntax to regex
 
             regex = r"(?:\.|^)" + ls
-            print(f"REGEX: {regex}")
             rule.domain_regex = re.compile(regex)
 
         return rule

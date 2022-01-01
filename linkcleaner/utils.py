@@ -1,6 +1,7 @@
 import re
 from furl import furl
 from abp_filter_parser import AbpFilterParser, RemoveParamRule
+from orderedmultidict import omdict
 
 URL_REGEX = re.compile(r"https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*)")  # noqa: E501
 
@@ -27,11 +28,24 @@ def clean_url(url):
     if parsed_url.username or parsed_url.password:
         return None
 
+    # Some filter rules depend on the path, some even depend on the arguments
+    url_without_scheme = parsed_url.netloc + str(parsed_url.path)
+    if parsed_url.query:
+        url_without_scheme += "?" + str(parsed_url.query)
+
     # Remove params from matching urls
     for rule in PARAM_RULE_LIST:
-        if re.search(rule.domain_regex, parsed_url.netloc + str(parsed_url.path)):
+        if re.search(rule.domain_regex, url_without_scheme):
             for p in rule.params:
-                parsed_url.args.pop(p, default=0)
+                if isinstance(p, re.Pattern):
+                    # Filter the parameters by regex and recreate the omdict
+                    # allitems() returns a key-value pair for each iteration
+                    parsed_url.args = omdict(
+                        filter(lambda kv: not re.search(p, kv[0]), parsed_url.args.allitems())
+                    )
+                else:  # Simple string entry
+                    # Remove non-regex entry
+                    parsed_url.args.pop(p, default=0)
 
     return parsed_url.url
 
