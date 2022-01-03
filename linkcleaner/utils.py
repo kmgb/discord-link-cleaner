@@ -40,9 +40,15 @@ def clean_url(url):
                 if isinstance(p, re.Pattern):
                     # Filter the parameters by regex and recreate the omdict
                     # allitems() returns a key-value pair for each iteration
-                    parsed_url.args = omdict(
-                        filter(lambda kv: not re.search(p, kv[0]), parsed_url.args.allitems())
-                    )
+                    parsed_url.args = omdict(filter(
+                        lambda kv:
+                            # TODO: Clean this up
+                            # Tests the regex against the 'key=value' string if there's a value
+                            # Just 'value' if there is no value.
+                            not re.search(p, kv[0] + "="+kv[1]) if kv[1]
+                            else not re.search(p, kv[0]),
+                            parsed_url.args.allitems()
+                    ))
                 else:  # Simple string entry
                     # Remove non-regex entry
                     parsed_url.args.pop(p, default=0)

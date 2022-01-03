@@ -26,7 +26,15 @@ TESTCASES = {
     # Should't match if argument d_visit_ver doesn't exist
     "http://nbcume.sc.omtrdc.net/id?mcorgid=1&mid=2&ts=3": "http://nbcume.sc.omtrdc.net/id?mcorgid=1&mid=2&ts=3",
 
+    # Test naked removeparam support, removes all parameters
     "https://ups.xplosion.de/ctx?event_id=5&made_up_parameter=6&ref=7&awesome=no": "https://ups.xplosion.de/ctx",
+
+    # Test attribute with empty value
+    "https://example.com/whatever?utm_campaign": "https://example.com/whatever",
+
+    # Test this funky filter:
+    # daraz.*$removeparam=/spm=|scm=|from=|keyori=|sugg=|search=|mp=|c=|^abtest|^abbucket|pos=|themeID=|algArgs=|clickTrackInfo=|acm=|item_id=|version=|up_id=|pvid=/
+    "https://daraz.me/?spm=3&scm&keyori=64": "https://daraz.me/?scm",
 }
 
 
