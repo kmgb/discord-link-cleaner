@@ -8,7 +8,6 @@ TESTCASES = {
     # TODO: Create issue on adguard tracking url protection to see if /ref= should be allowed
     "https://www.amazon.com/Seagate-Portable-External-Hard-Drive/dp/B07CRG94G3/ref=lp_16225507011_1_3": "https://www.amazon.com/Seagate-Portable-External-Hard-Drive/dp/B07CRG94G3/ref=lp_16225507011_1_3",
     "https://www.amazon.co.jp/-/en/b?node=3378226051&pf_rd_r=KVFXF51RDBFJBA9MNZ79&pf_rd_p=11ae6952-d524-4961-a10b-b366a4495a7b&pd_rd_r=8bde02a8-5e25-4781-8d3a-170d917fd064&pd_rd_w=lwWDc&pd_rd_wg=p9xsR&ref_=pd_gw_unk": "https://www.amazon.co.jp/-/en/b?node=3378226051&ref_=pd_gw_unk",
-    "https://www.amazon.co.jp/-/en/b?node=3378226051&pf_rd_r=KVFXF51RDBFJBA9MNZ79&pf_rd_p=11ae6952-d524-4961-a10b-b366a4495a7b&pd_rd_r=8bde02a8-5e25-4781-8d3a-170d917fd064&pd_rd_w=lwWDc&pd_rd_wg=p9xsR&ref_=pd_gw_unk": "https://www.amazon.co.jp/-/en/b?node=3378226051&ref_=pd_gw_unk",
 
     # Twitter
     "https://twitter.com/PlanNorge/status/1181537299038953473?ref_src=twsrc%2525255Etfw%2525257Ctwcamp%2525255Etweetembed%2525257Ctwterm%2525255E1181537299038953473&ref_url=https%2525253A%2525252F%2525252Fwww.vg.no%2525252F": "https://twitter.com/PlanNorge/status/1181537299038953473",
@@ -26,6 +25,8 @@ TESTCASES = {
     "http://nbcume.sc.omtrdc.net/id?d_visid_ver=something&mcorgid=1&mid=2&ts=3": "http://nbcume.sc.omtrdc.net/id?d_visid_ver=something",
     # Should't match if argument d_visit_ver doesn't exist
     "http://nbcume.sc.omtrdc.net/id?mcorgid=1&mid=2&ts=3": "http://nbcume.sc.omtrdc.net/id?mcorgid=1&mid=2&ts=3",
+
+    "https://ups.xplosion.de/ctx?event_id=5&made_up_parameter=6&ref=7&awesome=no": "https://ups.xplosion.de/ctx",
 }
 
 

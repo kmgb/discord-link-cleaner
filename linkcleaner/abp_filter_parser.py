@@ -47,12 +47,18 @@ class AbpFilterParser:
         leftside, options = content.split("$")
         options = options.split(",")
 
-        rule = RemoveParamRule(".*", [])
+        rule = RemoveParamRule(re.compile(".*"), [])
 
         # TODO: Support ||daraz.*$removeparam=/spm=|scm=|from=|keyori=|sugg=|search=|mp=|c=|^abtest|^abbucket|pos=|themeID=|algArgs=|clickTrackInfo=|acm=|item_id=|version=|up_id=|pvid=/
-        # TODO: Support ||ups.xplosion.de/ctx?event_id=$removeparam  <-- Not sure what blank removeparam means, does it remove all?
         for o in options:
             kv = o.split("=", 1)
+
+            # Special case of removeparam:
+            # If there is no value, remove all parameters
+            if len(kv) == 1 and kv[0] == "removeparam":
+                rule.params.append(re.compile(".*"))
+                continue
+
             if len(kv) != 2:
                 continue
 
@@ -61,7 +67,6 @@ class AbpFilterParser:
             if k == "removeparam":
                 rule.params.append(interpret_string_or_regex(v))
 
-        # Ignore site-specific filters for now
         if len(leftside) > 2 and leftside.startswith("||"):
             ls = leftside[2:]
             # TODO: Figure out if re.escape can help, it caused issues before
