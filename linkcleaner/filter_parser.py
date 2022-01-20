@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import re
 
 SPLIT_UNESCAPED_COMMA_REGEX = re.compile(r"(?<!\\),")
+WILDCARD_REGEX = re.compile(r".*")
 
 
 @dataclass
@@ -10,23 +11,25 @@ class RemoveParamRule:
     params: list[str | re.Pattern]
 
 
-class AbpFilterParser:
+class RemoveParamParser:
     """
-    Simple parser of AdBlockPlus-style filters.
-    Ignores filter rules with no $removeparam
+    Simple parser for removeparam rules in AdBlockPlus-style filters.
     """
     rules: dict[str, set[str]] = {}
 
-    def load(self, file_obj):
+    def parse_filterlist(self, iter):
         """
-        Parse the filters from the file_obj and add it to the rules list
+        Parse the filters from the iterable and add it to the rules list.
         """
-        for line in file_obj.readlines():
-            rule = self.parse_filter_line(line.strip())
+        for line in iter:
+            rule = self.parse_line(line.strip())
             if rule:
                 self.rules.setdefault(rule.domain_regex, set()).update(rule.params)
 
     def get_filter_list(self) -> list[RemoveParamRule]:
+        """
+        Produces the resultant RemoveParamRule list from the parsed filters.
+        """
         ret = []
 
         for k, v in self.rules.items():
@@ -34,15 +37,15 @@ class AbpFilterParser:
 
         return ret
 
-    def parse_filter_line(self, content):
+    def parse_line(self, content):
         """
         Parse a single filter line, returns a RemoveParamRule if success
         """
         if content.startswith("!"):
             return
 
-        # TODO: Fix parsing with escaped '$' and ',' characters in
-        # removeparam regular expressions
+        # First dollarsign should always be beginning of options
+        # We don't need to worry about escaped $
         leftside, options = content.split("$", 1)
         options = re.split(SPLIT_UNESCAPED_COMMA_REGEX, options)
 
@@ -56,7 +59,7 @@ class AbpFilterParser:
             # Special case of removeparam:
             # If there is no specified value, remove all parameters
             if len(kv) == 1 and kv[0] == "removeparam":
-                rule.params.append(re.compile(".*"))
+                rule.params.append(WILDCARD_REGEX)
                 continue
 
             if len(kv) != 2:
@@ -94,15 +97,3 @@ def parse_removeparam(v) -> list[str | re.Pattern]:
             return [re.compile(m[1])]
     else:
         return v.split("|")
-
-
-def main():
-    parser = AbpFilterParser()
-    parser.load(open("general_url.txt"))
-    parser.load(open("specific.txt"))
-
-    print(parser.get_filter_list())
-
-
-if __name__ == "__main__":
-    main()
