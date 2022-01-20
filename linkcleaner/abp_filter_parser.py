@@ -1,9 +1,7 @@
 from dataclasses import dataclass
 import re
 
-# Ideally this should be as compatible as possible with existing blocking solutions
-# This parser aims to bridge the gap between ABP filters (with removeparam) and this program
-# Could make use of https://github.com/adblockplus/python-abp, but it felt too bloated for my needs.
+SPLIT_UNESCAPED_COMMA_REGEX = re.compile(r"(?<!\\),")
 
 
 @dataclass
@@ -12,7 +10,6 @@ class RemoveParamRule:
     params: list[str | re.Pattern]
 
 
-# Ignores filters that don't include $removeparam
 class AbpFilterParser:
     """
     Simple parser of AdBlockPlus-style filters.
@@ -44,17 +41,20 @@ class AbpFilterParser:
         if content.startswith("!"):
             return
 
-        leftside, options = content.split("$")
-        options = options.split(",")
+        # TODO: Fix parsing with escaped '$' and ',' characters in
+        # removeparam regular expressions
+        leftside, options = content.split("$", 1)
+        options = re.split(SPLIT_UNESCAPED_COMMA_REGEX, options)
 
         rule = RemoveParamRule(re.compile(".*"), [])
 
-        # TODO: Support ||daraz.*$removeparam=/spm=|scm=|from=|keyori=|sugg=|search=|mp=|c=|^abtest|^abbucket|pos=|themeID=|algArgs=|clickTrackInfo=|acm=|item_id=|version=|up_id=|pvid=/
         for o in options:
+            # De-escape the expression so we can interpret it
+            o = re.sub(r"\\($|,|\/)", r"\1", o)
             kv = o.split("=", 1)
 
             # Special case of removeparam:
-            # If there is no value, remove all parameters
+            # If there is no specified value, remove all parameters
             if len(kv) == 1 and kv[0] == "removeparam":
                 rule.params.append(re.compile(".*"))
                 continue
@@ -63,30 +63,37 @@ class AbpFilterParser:
                 continue
 
             k, v = kv
-
             if k == "removeparam":
-                rule.params.append(interpret_string_or_regex(v))
+                if res := parse_removeparam(v):
+                    rule.params.extend(res)
 
         if len(leftside) > 2 and leftside.startswith("||"):
             ls = leftside[2:]
             # TODO: Figure out if re.escape can help, it caused issues before
-            ls = ls.replace("/", r"\/")     # Escape path separators
-            ls = ls.replace("?", r"\?")     # Escape path separators
-            ls = ls.replace("^", r"(?:\?|\/)")
-            ls = ls.replace(".", r"\.")     # Escape the periods in the URL already
-            ls = ls.replace("*", ".*")      # Change wildcard syntax to regex
+            ls = ls.replace("/", r"\/")         # Escape path separators
+            ls = ls.replace("?", r"\?")         # Escape path separators
+            ls = ls.replace(".", r"\.")         # Escape the periods in the URL already
+            ls = ls.replace("^", r"(?:\?|\/)")  # Change ABP separator to regex
+            ls = ls.replace("*", r".*")         # Change wildcard syntax to regex
 
             regex = r"(?:\.|^)" + ls
             rule.domain_regex = re.compile(regex)
 
+        # TODO: Handle exception filters (@@||filter)
+
         return rule
 
 
-def interpret_string_or_regex(text) -> str | re.Pattern:
-    if len(text) > 2 and text[0] == "/" and text[-1] == "/":
-        return re.compile(text[1:-1])
+# TODO: Negated expressions with '~'
+def parse_removeparam(v) -> list[str | re.Pattern]:
+    # Check and extract if in regex form
+    if m := re.fullmatch("/(.*)/(i)?", v):
+        if len(m.groups()) == 3 and m.group(2) == "i":
+            return [re.compile(m[1], flags=re.IGNORECASE)]
+        else:
+            return [re.compile(m[1])]
     else:
-        return text
+        return v.split("|")
 
 
 def main():
