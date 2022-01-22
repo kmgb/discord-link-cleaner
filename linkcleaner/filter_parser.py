@@ -15,7 +15,8 @@ class RemoveParamParser:
     """
     Simple parser for removeparam rules in AdBlockPlus-style filters.
     """
-    rules: dict[str, set[str]] = {}
+    # Mapping of domain regex -> param regex/str
+    rules: dict[object, set[object]] = {}
 
     def parse_filterlist(self, iter):
         """
@@ -37,7 +38,7 @@ class RemoveParamParser:
 
         return ret
 
-    def parse_line(self, content):
+    def parse_line(self, content) -> RemoveParamRule | None:
         """
         Parse a single filter line, returns a RemoveParamRule if success
         """
@@ -49,7 +50,7 @@ class RemoveParamParser:
         leftside, options = content.split("$", 1)
         options = re.split(SPLIT_UNESCAPED_COMMA_REGEX, options)
 
-        rule = RemoveParamRule(re.compile(".*"), [])
+        rule = RemoveParamRule(WILDCARD_REGEX, [])
 
         for o in options:
             # De-escape the expression so we can interpret it
